@@ -1,0 +1,260 @@
+import { useState, useEffect } from 'react';
+import { supabase } from '../database/SupabaseClient';
+
+interface Product {
+    id: number;
+    name: string;
+    price: number;
+    label: string;
+    category_id: number;
+}
+
+interface Category {
+    id: number;
+    name: string;
+}
+
+export default function ProductTable() {
+    const [products, setProducts] = useState<Product[]>([]);
+    const [categories, setCategories] = useState<Category[]>([]);
+    const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [loading, setLoading] = useState(true);
+    const [deleteLoading, setDeleteLoading] = useState<number | null>(null);
+
+    useEffect(() => {
+        fetchData();
+    }, []);
+
+    useEffect(() => {
+        filterProducts();
+    }, [searchTerm, products]);
+
+    const fetchData = async () => {
+        setLoading(true);
+        try {
+            // Cargar categorías
+            const { data: categoriesData, error: categoriesError } = await supabase
+                .from('categories')
+                .select('id, name');
+
+            if (categoriesError) {
+                console.error('Error al cargar categorías:', categoriesError);
+            } else {
+                setCategories(categoriesData || []);
+            }
+
+            // Cargar productos
+            const { data: productsData, error: productsError } = await supabase
+                .from('products')
+                .select('*')
+                .order('category_id', { ascending: true });
+
+            if (productsError) {
+                console.error('Error al cargar productos:', productsError);
+                alert('Error al cargar productos');
+                return;
+            }
+
+            if (productsData) {
+                // Ordenar por categoría y luego por nombre alfabéticamente
+                const sorted = productsData.sort((a, b) => {
+                    const categoryCompare = a.category_id - b.category_id;
+                    if (categoryCompare !== 0) return categoryCompare;
+                    return a.name.localeCompare(b.name);
+                });
+
+                setProducts(sorted);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const getCategoryName = (categoryId: number): string => {
+        const category = categories.find(cat => cat.id === categoryId);
+        return category?.name || 'Sin categoría';
+    };
+
+    const filterProducts = () => {
+        if (!searchTerm.trim()) {
+            setFilteredProducts(products);
+            return;
+        }
+
+        const filtered = products.filter(product => {
+            const categoryName = getCategoryName(product.category_id);
+            return (
+                product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                product.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                categoryName.toLowerCase().includes(searchTerm.toLowerCase())
+            );
+        });
+
+        setFilteredProducts(filtered);
+    };
+
+    const handleDelete = async (id: number, name: string) => {
+        const confirmDelete = window.confirm(`¿Estás seguro de eliminar "${name}"?`);
+        if (!confirmDelete) return;
+
+        setDeleteLoading(id);
+
+        try {
+            const { error } = await supabase
+                .from('products')
+                .delete()
+                .eq('id', id);
+
+            if (error) {
+                console.error('Error al eliminar:', error);
+                alert('Error al eliminar el producto');
+                return;
+            }
+
+            alert('Producto eliminado exitosamente');
+            fetchData();
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Error al eliminar el producto');
+        } finally {
+            setDeleteLoading(null);
+        }
+    };
+
+    // Agrupar productos por categoría
+    const groupedProducts = filteredProducts.reduce((acc, product) => {
+        const categoryName = getCategoryName(product.category_id);
+        if (!acc[categoryName]) {
+            acc[categoryName] = [];
+        }
+        acc[categoryName].push(product);
+        return acc;
+    }, {} as Record<string, Product[]>);
+
+    if (loading) {
+        return (
+            <div className='flex items-center justify-center min-h-screen'>
+                <div className='text-xl text-gray-600'>Cargando productos...</div>
+            </div>
+        );
+    }
+
+    return (
+        <div className='container mx-auto p-6'>
+            <div className='bg-white rounded-lg shadow-lg'>
+                {/* Header */}
+                <div className='p-6 border-b'>
+                    <h1 className='text-3xl font-bold text-gray-800 mb-4'>Inventario de Productos</h1>
+
+                    {/* Barra de búsqueda */}
+                    <div className='relative'>
+                        <input
+                            type='text'
+                            placeholder='Buscar por nombre, marca o categoría...'
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className='w-full px-4 py-3 pl-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-600 focus:border-transparent outline-none transition'
+                        />
+                        <svg
+                            className='absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400'
+                            fill='none'
+                            stroke='currentColor'
+                            viewBox='0 0 24 24'
+                        >
+                            <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z' />
+                        </svg>
+                    </div>
+
+                    <div className='mt-2 text-sm text-gray-600'>
+                        {filteredProducts.length} producto{filteredProducts.length !== 1 ? 's' : ''} encontrado{filteredProducts.length !== 1 ? 's' : ''}
+                    </div>
+                </div>
+
+                {/* Tabla */}
+                <div className='overflow-x-auto'>
+                    {Object.keys(groupedProducts).length === 0 ? (
+                        <div className='p-12 text-center text-gray-500'>
+                            <svg className='mx-auto w-16 h-16 mb-4 text-gray-300' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                                <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4' />
+                            </svg>
+                            <p className='text-lg'>No se encontraron productos</p>
+                        </div>
+                    ) : (
+                        Object.entries(groupedProducts).map(([category, categoryProducts]) => (
+                            <div key={category} className='mb-6'>
+                                {/* Categoría Header */}
+                                <div className='bg-gray-100 px-6 py-3 border-t border-b'>
+                                    <h2 className='text-lg text-center font-semibold text-gray-700'>{category}</h2>
+                                </div>
+
+                                {/* Tabla de productos */}
+                                <table className='w-full'>
+                                    <thead className='bg-gray-50'>
+                                    <tr>
+                                        <th className='px-6 py-3 text-sm text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                                            Producto
+                                        </th>
+                                        <th className='px-6 py-3 text-sm text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                                            Marca
+                                        </th>
+                                        <th className='px-6 py-3 text-sm text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                                            Precio
+                                        </th>
+                                        <th className='px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                                            Acciones
+                                        </th>
+                                    </tr>
+                                    </thead>
+                                    <tbody className='bg-white divide-y divide-gray-200'>
+                                    {categoryProducts.map((product) => (
+                                        <tr key={product.id} className='text-center hover:bg-gray-50 transition'>
+                                            <td className='px-6 py-4 whitespace-nowrap'>
+                                                <div className='text-sm font-medium text-gray-900'>{product.name}</div>
+                                            </td>
+                                            <td className='px-6 py-4 whitespace-nowrap'>
+                                                <div className='text-sm text-gray-600'>{product.label}</div>
+                                            </td>
+                                            <td className='px-6 py-4 whitespace-nowrap'>
+                                                <div className='text-sm font-semibold text-green-600'>
+                                                    ${product.price.toFixed(0)}
+                                                </div>
+                                            </td>
+                                            <td className='px-6 py-4 whitespace-nowrap text-right'>
+                                                <button
+                                                    onClick={() => handleDelete(product.id, product.name)}
+                                                    disabled={deleteLoading === product.id}
+                                                    className='inline-flex items-center px-3 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 focus:ring-4 focus:ring-red-300 transition disabled:opacity-50'
+                                                >
+                                                    {deleteLoading === product.id ? (
+                                                        <>
+                                                            <svg className='animate-spin -ml-1 mr-2 h-4 w-4 text-white' fill='none' viewBox='0 0 24 24'>
+                                                                <circle className='opacity-25' cx='12' cy='12' r='10' stroke='currentColor' strokeWidth='4'></circle>
+                                                                <path className='opacity-75' fill='currentColor' d='M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z'></path>
+                                                            </svg>
+                                                            Eliminando...
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <svg className='w-4 h-4 mr-1' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                                                                <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16' />
+                                                            </svg>
+                                                            Eliminar
+                                                        </>
+                                                    )}
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        ))
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+}
