@@ -28,29 +28,31 @@ function Login() {
 
     return (
         <div className="flex flex-col items-center justify-center h-screen">
-            <h1 className="text-xl mb-4">Iniciar sesión</h1>
-            <form onSubmit={handleLogin} className="flex flex-col w-64 gap-3">
-                <input
-                    type="text"
-                    placeholder="Cédula"
-                    value={dni}
-                    onChange={(e) => setDni(e.target.value)}
-                    className="p-2 border rounded"
-                />
-                <input
-                    type="password"
-                    placeholder="Contraseña"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="p-2 border rounded"
-                />
-                <button
-                    type="submit"
-                    className="bg-green-500 text-white p-2 rounded hover:bg-green-600"
-                >
-                    Entrar
-                </button>
-            </form>
+            <div className='flex flex-col items-center justify-center p-4 rounded-2xl border-2 border-green-800'>
+                <h1 className="text-xl mb-4">Iniciar sesión</h1>
+                <form onSubmit={handleLogin} className="flex flex-col w-64 gap-3">
+                    <input
+                        type="text"
+                        placeholder="Cédula"
+                        value={dni}
+                        onChange={(e) => setDni(e.target.value)}
+                        className="p-2 border rounded"
+                    />
+                    <input
+                        type="password"
+                        placeholder="Contraseña"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="p-2 border rounded"
+                    />
+                    <button
+                        type="submit"
+                        className="bg-green-500 text-white p-2 rounded hover:bg-green-600"
+                    >
+                        Entrar
+                    </button>
+                </form>
+            </div>
             {errorMessage && <p className="text-red-600 mt-2">{errorMessage}</p>}
         </div>
     );

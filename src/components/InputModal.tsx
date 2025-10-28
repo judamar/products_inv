@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
-import { supabase } from '../database/SupabaseClient.ts'
+import {useState, useEffect} from 'react';
+import {supabase} from '../database/SupabaseClient.ts'
+import type {Product} from './ProductTable';
 
 interface FormData {
     nombre: string;
@@ -14,12 +15,13 @@ interface Categoria {
 }
 
 interface InputModalProps {
-    isOpen: boolean;
-    onClose: () => void;
-    onSave?: (data: FormData) => void;
+    isOpen: boolean,
+    onClose: () => void,
+    onSave?: () => void,
+    productToEdit?: Product | null
 }
 
-export default function InputModal({ isOpen, onClose, onSave }: InputModalProps) {
+export default function InputModal({isOpen, onClose, onSave, productToEdit}: InputModalProps) {
     const [formData, setFormData] = useState<FormData>({
         nombre: '',
         precio: '',
@@ -37,12 +39,31 @@ export default function InputModal({ isOpen, onClose, onSave }: InputModalProps)
         }
     }, [isOpen]);
 
+    // Cargar datos del producto cuando se va a editar
+    useEffect(() => {
+        if (productToEdit) {
+            setFormData({
+                nombre: productToEdit.name,
+                precio: productToEdit.price.toString(),
+                marca: productToEdit.label,
+                categoria: productToEdit.category_id.toString()
+            });
+        } else {
+            setFormData({
+                nombre: '',
+                precio: '',
+                marca: '',
+                categoria: ''
+            });
+        }
+    }, [productToEdit]);
+
     const fetchCategorias = async () => {
         try {
-            const { data, error } = await supabase
+            const {data, error} = await supabase
                 .from('categories')
                 .select('id, name')
-                .order('name', { ascending: true });
+                .order('name', {ascending: true});
 
             if (error) {
                 console.error('Error al cargar categorías:', error);
@@ -58,7 +79,7 @@ export default function InputModal({ isOpen, onClose, onSave }: InputModalProps)
     };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-        const { name, value } = e.target;
+        const {name, value} = e.target;
         setFormData(prev => ({
             ...prev,
             [name]: value
@@ -74,31 +95,56 @@ export default function InputModal({ isOpen, onClose, onSave }: InputModalProps)
         setLoading(true);
 
         try {
-            const { data, error } = await supabase
-                .from('products')
-                .insert([
-                    {
+            if (productToEdit) {
+                // Actualizar producto existente
+                const {data, error} = await supabase
+                    .from('products')
+                    .update({
                         name: formData.nombre,
                         price: parseFloat(formData.precio),
                         label: formData.marca,
-                        category_id: formData.categoria // Ahora guarda el ID
-                    }
-                ])
-                .select();
+                        category_id: parseInt(formData.categoria)
+                    })
+                    .eq('id', productToEdit.id)
+                    .select();
 
-            if (error) {
-                console.error('Error al guardar:', error);
-                alert('Error al guardar el producto: ' + error.message);
-                setLoading(false);
-                return;
+                if (error) {
+                    console.error('Error al actualizar:', error);
+                    alert('Error al actualizar el producto: ' + error.message);
+                    setLoading(false);
+                    return;
+                }
+
+                console.log('Producto actualizado exitosamente:', data);
+                alert('Producto actualizado exitosamente!');
+            } else {
+                // Crear nuevo producto
+                const {data, error} = await supabase
+                    .from('products')
+                    .insert([
+                        {
+                            name: formData.nombre,
+                            price: parseFloat(formData.precio),
+                            label: formData.marca,
+                            category_id: parseInt(formData.categoria)
+                        }
+                    ])
+                    .select();
+
+                if (error) {
+                    console.error('Error al guardar:', error);
+                    alert('Error al guardar el producto: ' + error.message);
+                    setLoading(false);
+                    return;
+                }
+
+                console.log('Producto guardado exitosamente:', data);
+                alert('Producto guardado exitosamente!');
             }
-
-            console.log('Producto guardado exitosamente:', data);
-            alert('Producto guardado exitosamente!');
 
             // Llamar callback si existe
             if (onSave) {
-                onSave(formData);
+                onSave();
             }
 
             // Limpiar formulario
@@ -113,7 +159,7 @@ export default function InputModal({ isOpen, onClose, onSave }: InputModalProps)
 
         } catch (error) {
             console.error('Error inesperado:', error);
-            alert('Error al guardar el producto');
+            alert('Error al procesar el producto');
         } finally {
             setLoading(false);
         }
@@ -145,14 +191,17 @@ export default function InputModal({ isOpen, onClose, onSave }: InputModalProps)
                 <div className='bg-white rounded-lg shadow-xl w-full max-w-md transform transition-all'>
                     {/* Header */}
                     <div className='flex items-center justify-between p-6 border-b'>
-                        <h2 className='text-2xl font-bold text-gray-800'>Agregar Producto</h2>
+                        <h2 className='text-2xl font-bold text-gray-800'>
+                            {productToEdit ? 'Editar Producto' : 'Agregar Producto'}
+                        </h2>
                         <button
                             onClick={handleClose}
                             className='text-gray-400 hover:text-gray-600 transition'
                             aria-label='Close'
                         >
                             <svg className='w-6 h-6' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                                <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M6 18L18 6M6 6l12 12' />
+                                <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2}
+                                      d='M6 18L18 6M6 6l12 12'/>
                             </svg>
                         </button>
                     </div>
@@ -192,7 +241,7 @@ export default function InputModal({ isOpen, onClose, onSave }: InputModalProps)
                         </div>
 
                         <div>
-                            <label htmlFor='label' className='block text-sm font-medium text-gray-700 mb-2'>
+                            <label htmlFor='marca' className='block text-sm font-medium text-gray-700 mb-2'>
                                 Marca
                             </label>
                             <input
@@ -243,7 +292,7 @@ export default function InputModal({ isOpen, onClose, onSave }: InputModalProps)
                             disabled={loading}
                             className='flex-1 bg-green-800 text-white py-2 px-4 rounded-lg font-medium hover:bg-green-900 focus:ring-4 focus:ring-green-300 transition duration-200 disabled:opacity-50'
                         >
-                            {loading ? 'Guardando...' : 'Guardar'}
+                            {loading ? (productToEdit ? 'Actualizando...' : 'Guardando...') : (productToEdit ? 'Actualizar' : 'Guardar')}
                         </button>
                     </div>
                 </div>
