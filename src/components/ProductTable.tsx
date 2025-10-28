@@ -165,14 +165,14 @@ export default function ProductTable() {
                     <div className="flex justify-center items-center gap-5 mb-4">
                         <button
                             onClick={() => setIsModalOpen(true)}
-                            className='flex-2 bg-green-700 text-white py-2 px-4 rounded-lg font-medium hover:bg-green-900 focus:ring-4 focus:ring-green-300 transition duration-200 disabled:opacity-50'
+                            className='flex-2 bg-green-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-green-700 focus:ring-4 focus:ring-green-300 transition duration-200 disabled:opacity-50'
                         >
                             Agregar Producto
                         </button>
 
                         <button
                             onClick={handleLogout}
-                            className="flex-1 bg-gray-800 text-white py-2 px-4 rounded-lg font-medium hover:bg-gray-900 focus:ring-4 focus:ring-gray-300 transition duration-200 disabled:opacity-50"
+                            className="flex-1 bg-gray-700 text-white py-2 px-4 rounded-lg font-medium hover:bg-gray-800 focus:ring-4 focus:ring-gray-300 transition duration-200 disabled:opacity-50"
                         >
                             Cerrar sesión
                         </button>
@@ -191,7 +191,7 @@ export default function ProductTable() {
                             placeholder='Buscar...'
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className='w-full px-4 py-2 sm:py-3 pl-10 sm:pl-12 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-600 focus:border-transparent outline-none transition'
+                            className='w-full px-4 py-2 sm:py-3 pl-10 sm:pl-12 text-sm sm:text-base border-2 border-gray-400 rounded-lg focus:ring-2 focus:ring-green-600 focus:border-transparent outline-none transition'
                         />
                         <svg
                             className='absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-gray-400'
@@ -203,7 +203,7 @@ export default function ProductTable() {
                         </svg>
                     </div>
 
-                    <div className='mt-2 text-xs sm:text-sm text-gray-600'>
+                    <div className='mt-2 text-xs sm:text-sm font-semibold text-gray-600'>
                         {filteredProducts.length} producto{filteredProducts.length !== 1 ? 's' : ''} encontrado{filteredProducts.length !== 1 ? 's' : ''}
                     </div>
                 </div>
@@ -259,7 +259,7 @@ export default function ProductTable() {
                                                     <div className='flex justify-end gap-2'>
                                                         <button
                                                             onClick={() => handleEdit(product)}
-                                                            className='inline-flex items-center px-3 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 focus:ring-4 focus:ring-blue-300 transition'
+                                                            className='inline-flex items-center px-3 py-2 bg-blue-500 text-white text-sm font-medium rounded-lg hover:bg-blue-700 focus:ring-4 focus:ring-blue-300 transition'
                                                         >
                                                             <svg className='w-4 h-4 mr-1' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
                                                                 <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z' />
@@ -269,7 +269,7 @@ export default function ProductTable() {
                                                         <button
                                                             onClick={() => handleDelete(product.id, product.name)}
                                                             disabled={deleteLoading === product.id}
-                                                            className='inline-flex items-center px-3 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 focus:ring-4 focus:ring-red-300 transition disabled:opacity-50'
+                                                            className='inline-flex items-center px-3 py-2 bg-red-500 text-white text-sm font-medium rounded-lg hover:bg-red-600 focus:ring-4 focus:ring-red-300 transition disabled:opacity-50'
                                                         >
                                                             {deleteLoading === product.id ? (
                                                                 <>
@@ -307,10 +307,10 @@ export default function ProductTable() {
                                                         $ {product.price.toFixed(0)}
                                                     </div>
                                                 </div>
-                                                <div className='flex gap-2 ml-3'>
+                                                <div className='flex flex-col gap-1 ml-3'>
                                                     <button
                                                         onClick={() => handleEdit(product)}
-                                                        className='p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition'
+                                                        className='p-2 bg-blue-500 text-white rounded-lg hover:bg-blue-700 transition'
                                                     >
                                                         <svg className='w-5 h-5' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
                                                             <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z' />
@@ -319,7 +319,7 @@ export default function ProductTable() {
                                                     <button
                                                         onClick={() => handleDelete(product.id, product.name)}
                                                         disabled={deleteLoading === product.id}
-                                                        className='p-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition disabled:opacity-50'
+                                                        className='p-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition disabled:opacity-50'
                                                     >
                                                         {deleteLoading === product.id ? (
                                                             <svg className='animate-spin h-5 w-5 text-white' fill='none' viewBox='0 0 24 24'>
