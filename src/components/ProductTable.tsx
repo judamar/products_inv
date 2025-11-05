@@ -252,7 +252,7 @@ export default function ProductTable() {
                                                 </td>
                                                 <td className='px-6 py-4 whitespace-nowrap'>
                                                     <div className='text-sm font-semibold text-green-600'>
-                                                        ${product.price.toFixed(0)}
+                                                        ${new Intl.NumberFormat('es-CO').format(product.price)}
                                                     </div>
                                                 </td>
                                                 <td className='px-6 py-4 whitespace-nowrap text-right'>
